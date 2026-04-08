@@ -7,3 +7,5 @@ When responding to your messages
 When a message includes the word "Jarvis"
 
 Right now, it’s only set up for Ollama, and it comes with a simple web interface.
+
+I am not responsable for what you do with this code
