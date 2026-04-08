@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jarvis Control</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f7f9fc;
+  --panel: #ffffff;
+  --border: #e5e9f2;
+  --accent: #2563eb;
+  --accent2: #1d4ed8;
+  --danger: #ef4444;
+  --success: #10b981;
+  --warn: #f59e0b;
+  --text: #1f2937;
+  --dim: #6b7280;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Exo 2', sans-serif;
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.logo {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  background: var(--accent);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.title-block h1 { font-size: 1.6rem; font-weight: 600; }
+.title-block p { font-size: 0.8rem; color: var(--dim); }
+
+.status-badge {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 1rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  background: #f1f5f9;
+}
+
+.status-badge.online { color: var(--success); }
+.status-badge.offline { color: var(--danger); }
+
+.dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 700px) { .grid { grid-template-columns: 1fr; } }
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.2rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+}
+
+.panel-title { font-size: 0.75rem; font-weight: 600; color: var(--dim); margin-bottom: 1rem; }
+
+.btn-row { display: flex; gap: 0.6rem; }
+
+button {
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: 0.2s;
+  flex: 1;
+}
+
+.btn-start { background: var(--success); color: white; }
+.btn-stop { background: var(--danger); color: white; }
+.btn-save { background: var(--accent); color: white; }
+.btn-danger { background: #fee2e2; color: var(--danger); border: 1px solid #fecaca; flex: none; }
+
+label {
+  font-size: 0.75rem; color: var(--dim); margin-top: 0.8rem; display: block;
+}
+
+input, textarea {
+  width: 100%; border: 1px solid var(--border); border-radius: 6px;
+  padding: 0.5rem 0.7rem; margin-top: 0.3rem; font-size: 0.85rem; background: #fff;
+}
+
+input:focus, textarea:focus { outline: none; border-color: var(--accent); }
+
+.server-list {
+  display: flex; flex-direction: column; gap: 0.5rem; max-height: 220px; overflow-y: auto;
+}
+
+.server-item {
+  display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0.7rem;
+  border-radius: 6px; border: 1px solid var(--border); font-size: 0.82rem;
+}
+
+.server-item.blacklisted { background: #fee2e2; border-color: #fecaca; }
+
+.server-name { flex: 1; }
+.server-id { font-size: 0.7rem; color: var(--dim); }
+
+.bl-badge { font-size: 0.65rem; padding: 0.1rem 0.4rem; border-radius: 4px; background: var(--danger); color: white; }
+
+.log-box {
+  background: #f9fafb; border: 1px solid var(--border); border-radius: 6px;
+  padding: 0.8rem; height: 240px; overflow-y: auto; font-size: 0.75rem; color: var(--dim);
+}
+
+.log-line { margin-bottom: 2px; }
+.log-ts { color: var(--accent); }
+
+#toast {
+  position: fixed; bottom: 1.5rem; right: 1.5rem; background: white;
+  border: 1px solid var(--border); padding: 0.6rem 1rem; border-radius: 6px;
+  font-size: 0.8rem; opacity: 0; transition: 0.2s;
+}
+
+#toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="logo">J</div>
+    <div class="title-block">
+      <h1>Jarvis Control</h1>
+      <p>DISCORD SELFBOT DASHBOARD</p>
+    </div>
+    <div id="statusBadge" class="status-badge offline">
+      <div class="dot" id="statusDot"></div>
+      <span id="statusText">OFFLINE</span>
+    </div>
+  </header>
+
+  <div class="grid">
+    <!-- Bot Control -->
+    <div class="panel">
+      <div class="panel-title">Bot Control</div>
+      <div class="btn-row">
+        <button class="btn-start" onclick="startBot()">▶ START</button>
+        <button class="btn-stop" onclick="stopBot()">■ STOP</button>
+      </div>
+    </div>
+
+    <!-- Configuration -->
+    <div class="panel">
+      <div class="panel-title">Configuration</div>
+      <label>DISCORD TOKEN</label>
+      <input type="password" id="cfgToken" placeholder="Paste new token to update">
+      <label>OLLAMA MODEL</label>
+      <input type="text" id="cfgModel" placeholder="gemma2:2b">
+      <label>OLLAMA URL</label>
+      <input type="text" id="cfgUrl" placeholder="http://localhost:11434/api/chat">
+      <label>SYSTEM PROMPT</label>
+      <textarea id="cfgPrompt"></textarea>
+      <div style="margin-top:1rem">
+        <button class="btn-save" onclick="saveConfig()">SAVE CONFIG</button>
+      </div>
+    </div>
+
+    <!-- Servers & Blacklist -->
+    <div class="panel">
+      <div class="panel-title">Servers & Blacklist</div>
+      <div class="server-list" id="serverList">
+        <div style="color:var(--dim);font-size:0.8rem;font-family:'Share Tech Mono',monospace">
+          Start bot to see servers...
+        </div>
+      </div>
+      <div style="margin-top:1rem;display:flex;gap:0.6rem">
+        <input type="text" id="manualServerId" placeholder="Paste server ID to blacklist">
+        <button class="btn-danger" onclick="blacklistManual()">BLOCK</button>
+      </div>
+    </div>
+
+    <!-- Activity Log -->
+    <div class="panel">
+      <div class="panel-title">Activity Log</div>
+      <div class="log-box" id="logBox">
+        <div style="color:var(--dim)">Waiting for activity...</div>
+      </div>
+      <div style="margin-top:0.8rem;display:flex;justify-content:flex-end">
+        <button class="btn-save" style="flex:none;padding:0.4rem 1rem;font-size:0.75rem" onclick="loadLogs()">REFRESH</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+let pollInterval = null;
+
+function toast(msg, color) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.borderColor = color || 'var(--accent)';
+  t.style.color = color || 'var(--accent)';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+async function loadStatus() {
+  try {
+    const r = await fetch('/api/status');
+    const d = await r.json();
+    const badge = document.getElementById('statusBadge');
+    const dot   = document.getElementById('statusDot');
+    const txt   = document.getElementById('statusText');
+
+    if (d.running) {
+      badge.className = 'status-badge online';
+      dot.className   = 'dot';
+      txt.textContent = 'ONLINE';
+    } else {
+      badge.className = 'status-badge offline';
+      dot.className   = 'dot';
+      txt.textContent = 'OFFLINE';
+    }
+
+    renderServers(d.guilds || [], d.blacklisted || []);
+  } catch(e) {}
+}
+
+function renderServers(guilds, blacklisted) {
+  const el = document.getElementById('serverList');
+  if (!guilds.length) {
+    el.innerHTML = '<div style="color:var(--dim);font-size:0.8rem;font-family:\'Share Tech Mono\',monospace">No servers found. Is the bot running?</div>';
+    return;
+  }
+  el.innerHTML = guilds.map(g => {
+    const isbl = blacklisted.includes(g.id);
+    return `<div class="server-item ${isbl ? 'blacklisted' : ''}">
+      <div>
+        <div class="server-name">${g.name}</div>
+        <div class="server-id">${g.id}</div>
+      </div>
+      ${isbl ? '<span class="bl-badge">BLOCKED</span>' : ''}
+      <button class="btn-danger" onclick="${isbl ? 'unblacklist' : 'blacklist'}('${g.id}')">
+        ${isbl ? 'UNBLOCK' : 'BLOCK'}
+      </button>
+    </div>`;
+  }).join('');
+}
+
+async function loadConfig() {
+  try {
+    const r = await fetch('/api/config');
+    const d = await r.json();
+    document.getElementById('cfgModel').value  = d.ollama_model  || '';
+    document.getElementById('cfgUrl').value    = d.ollama_url    || '';
+    document.getElementById('cfgPrompt').value = d.system_prompt || '';
+  } catch(e) {}
+}
+
+async function saveConfig() {
+  const token  = document.getElementById('cfgToken').value.trim();
+  const model  = document.getElementById('cfgModel').value.trim();
+  const url    = document.getElementById('cfgUrl').value.trim();
+  const prompt = document.getElementById('cfgPrompt').value.trim();
+  const r = await fetch('/api/config', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({token: token || '...', ollama_model: model, ollama_url: url, system_prompt: prompt})
+  });
+  const d = await r.json();
+  if (d.ok) {
+    toast('Config saved!', 'var(--success)');
+    document.getElementById('cfgToken').value = '';
+  }
+}
+
+async function startBot() {
+  const r = await fetch('/api/start', {method:'POST'});
+  const d = await r.json();
+  toast(d.ok ? 'Bot starting...' : d.msg, d.ok ? 'var(--success)' : 'var(--warn)');
+  setTimeout(loadStatus, 2000);
+}
+
+async function stopBot() {
+  const r = await fetch('/api/stop', {method:'POST'});
+  const d = await r.json();
+  toast(d.ok ? 'Bot stopped.' : d.msg, d.ok ? 'var(--danger)' : 'var(--warn)');
+  setTimeout(loadStatus, 1000);
+}
+
+async function blacklist(id) {
+  await fetch('/api/blacklist', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({server_id: id, action: 'add'})
+  });
+  toast('Server blocked.', 'var(--danger)');
+  loadStatus();
+}
+
+async function unblacklist(id) {
+  await fetch('/api/blacklist', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({server_id: id, action: 'remove'})
+  });
+  toast('Server unblocked.', 'var(--success)');
+  loadStatus();
+}
+
+async function blacklistManual() {
+  const id = document.getElementById('manualServerId').value.trim();
+  if (!id) return;
+  await blacklist(id);
+  document.getElementById('manualServerId').value = '';
+}
+
+async function loadLogs() {
+  try {
+    const r = await fetch('/api/logs');
+    const d = await r.json();
+    const box = document.getElementById('logBox');
+    if (!d.lines.length) return;
+    box.innerHTML = d.lines.map(line => {
+      const m = line.match(/^\[(.+?)\]\s(.*)$/);
+      if (m) return `<div class="log-line"><span class="log-ts">[${m[1]}]</span><span class="log-body">${m[2]}</span></div>`;
+      return `<div class="log-line">${line}</div>`;
+    }).join('');
+    box.scrollTop = box.scrollHeight;
+  } catch(e) {}
+}
+
+// Initialize
+loadConfig();
+loadStatus();
+loadLogs();
+pollInterval = setInterval(() => { loadStatus(); loadLogs(); }, 5000);
+</script>
+</body>
+</html>

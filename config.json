@@ -1,0 +1,8 @@
+{
+  "token": "YOUR DISCORD TOKEN HERE",
+  "ollama_model": "OLLAMA MODEL HERE",
+  "ollama_url": "http://localhost:11434/api/chat",
+  "system_prompt": "AI SYSTEM PROMPT CHANGE THIS BEFORE RUNNING",
+  "blacklisted_servers": [
+  ]
+}
